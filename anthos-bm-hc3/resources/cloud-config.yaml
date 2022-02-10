@@ -1,0 +1,58 @@
+#cloud-config
+shell: /bin/bash
+disable_root: false
+users:
+  - default
+  - name: root
+    sudo: ALL=(ALL) NOPASSWD:ALL
+    groups: users, admin, sudo
+    home: /home/ubuntu
+    shell: /bin/bash
+    passwd: Scale2010
+    lock_passwd: false
+    ssh-authorized-keys:
+      - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDukCBI8HK9Xd4/UmxEE3UTxuNfAZb1ZqCSJ4G0fcTogQnCaU1MmgyeyeNlPTqGn9qvmfdA8lBHg/j4UDlL11cu5U4oWdF2FvIK0KUCNgppQc7rs8ZDjdTuST0SKys4ZRTMcHXQZNfeqMIfwMAslFASMLh9xzCI+Rib6ym4Y3E4CQ== davedemlow@ddemlow.scalecomputing.local
+chpasswd:
+  list: |
+     ubuntu:Scale2010
+     root:Scale2010
+  expire: False
+ssh:
+  emit_keys_to_console: false
+ssh_pwauth: True
+disable_root: False
+ssh_import_id:  gh:ddemlow
+ssh_authorized_keys:
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQDAHFkZJN9mtPrOCDKMi5227I1I7ftK99nB9UoSEcED4j+xv8BvyfFBwV0xQN9lIbaRA7+sBfc4zMIVrDu6Q2dUKNsxKuO0ylQUcxcVi1SeTzY0myBzezWqrzXN4Wdc8P2IuZLd5zSF/EPgVjc3lffqw710ap5JAcbIcMvThBx+NXPsKhvymR3ao1PonAuQ8fx6lsjxupEgV+/veAUOZr8zzyiJM3rHSBqHMUqEjbnitb1lmElTXwjSR8wUrxbVKMv8FKUILTbudxeyH7tUySEJhyBQ/n/giAOW1uiVjGHIqF4Yn+7VN9bTf2vu3W45cppG1jP/A9YKNqV4+Z+1K+iqzqacxmUWiBccChjr6QyoIis/4AH1bTXSr4uKyzf6YWfXRcfMQGeUiYz67xEaZP5o+6xnXkTKPHUkLe58fFuUHXLlot4xAFsJ4QfhrV6AegNUChbf74telvc7MMERtsj+371Xiw5YkoKyeZH0Sr/HRhDNmzDZ6RRd15uIvd+95uU= user@anthos-workstation-ddemlow
+  - ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAAAgQDukCBI8HK9Xd4/UmxEE3UTxuNfAZb1ZqCSJ4G0fcTogQnCaU1MmgyeyeNlPTqGn9qvmfdA8lBHg/j4UDlL11cu5U4oWdF2FvIK0KUCNgppQc7rs8ZDjdTuST0SKys4ZRTMcHXQZNfeqMIfwMAslFASMLh9xzCI+Rib6ym4Y3E4CQ== davedemlow@ddemlow.scalecomputing.local
+packages: 
+- jq 
+- qemu-guest-agent
+- unzip
+write_files:
+- content: |
+    export PATH=$PATH:/var/lib/google-cloud-sdk/bin
+    source /var/lib/google-cloud-sdk/path.bash.inc
+    source /var/lib/google-cloud-sdk/completion.bash.inc
+  path: /home/ubuntu/.profile
+- path: /etc/ssh/sshd_config
+  content: |
+        PermitRootLogin yes
+        PubkeyAuthentication yes
+        ChallengeResponseAuthentication no
+        X11Forwarding yes
+        PrintMotd no
+        AcceptEnv LANG LC_*
+        Subsystem sftp /usr/lib/openssh/sftp-server
+        UsePAM no
+        AllowUsers root
+
+manage_etc_hosts: true
+
+runcmd:
+- systemctl stop apparmor.service
+- systemctl disable apparmor.service
+- curl https://sdk.cloud.google.com > install.sh
+- bash install.sh --disable-prompts --install-dir /var/lib/
+- mkdir /mnt/localpv-disk
+- mkdir /mnt/localpv-share
